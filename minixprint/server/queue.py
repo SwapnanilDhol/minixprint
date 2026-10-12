@@ -14,6 +14,7 @@ log = logging.getLogger("minixprint.queue")
 DEDUPE_WINDOW = 30 * 60
 INFO_TTL = 30.0       # seconds between info/battery refreshes
 STATUS_TTL = 5.0      # seconds between status-flag refreshes (idle only)
+RECONNECT_MIN = 2.0
 RECONNECT_MAX = 30.0
 
 
@@ -29,8 +30,9 @@ class PrintQueue:
         self._thread = None  # type: Optional[threading.Thread]
         self._stop = threading.Event()
         self._ready = threading.Event()
-        self._backoff = 1.0
+        self._backoff = RECONNECT_MIN
         self._next_try = 0.0
+        self._lost = False  # had a printer and lost it: jobs wait instead of faking
         self._cache = {"info": None, "battery": None, "flags": None, "status_byte": None,
                        "info_ts": 0.0, "status_ts": 0.0, "error": None}  # type: Dict[str, Any]
         self._cache_lock = threading.Lock()
@@ -55,7 +57,7 @@ class PrintQueue:
 
     @property
     def fake(self) -> bool:
-        return self.forced_fake or self._printer is None
+        return self.forced_fake or (self._printer is None and not self._lost)
 
     # --- producer side -----------------------------------------------------
     def submit(self, kind: str, image, summary: str, user: str = "local", density: int = 2,
@@ -99,24 +101,37 @@ class PrintQueue:
 
     # --- worker ------------------------------------------------------------
     def _run(self) -> None:
-        if not self.forced_fake:
-            self._connect()
+        try:
+            if not self.forced_fake:
+                self._connect()
+        except Exception:  # pragma: no cover
+            log.exception("initial connect crashed")
         self._ready.set()
         while not self._stop.is_set():
             try:
-                item = self._q.get(timeout=1.0)
-            except _queue.Empty:
-                self._idle()
-                continue
-            if item is None:
-                break
-            self._process(item)
+                if self._lost and not self.forced_fake:
+                    # printer went away: hold queued jobs until it is back
+                    self._idle()
+                    self._stop.wait(0.5)
+                    continue
+                try:
+                    item = self._q.get(timeout=1.0)
+                except _queue.Empty:
+                    self._idle()
+                    continue
+                if item is None:
+                    break
+                self._process(item)
+            except Exception:
+                log.exception("worker loop error")
+                self._stop.wait(1.0)
 
     def _connect(self) -> bool:
         now = time.time()
         try:
             self._printer = self._connect_fn()
-            self._backoff = 1.0
+            self._backoff = RECONNECT_MIN
+            self._lost = False
             log.info("printer connected")
             self._refresh(force=True)
             return True
@@ -126,17 +141,23 @@ class PrintQueue:
             self._backoff = min(self._backoff * 2, RECONNECT_MAX)
             with self._cache_lock:
                 self._cache["error"] = str(e)
-            log.warning("no printer (%s); fake mode, retrying in %.0fs", e, self._next_try - now)
+            log.warning("no printer (%s); %s, retrying in %.0fs", e,
+                        "waiting" if self._lost else "fake mode", self._next_try - now)
             return False
 
-    def _drop(self) -> None:
+    def _drop(self, error: Optional[str] = None) -> None:
+        """Printer lost: close the transport, report disconnected, schedule a reconnect."""
         if self._printer:
             try:
                 self._printer.close()
             except Exception:
                 pass
         self._printer = None
+        self._lost = not self.forced_fake
         self._next_try = time.time() + self._backoff
+        if error is not None:
+            with self._cache_lock:
+                self._cache["error"] = error
 
     def _idle(self) -> None:
         if self.forced_fake:
@@ -165,11 +186,9 @@ class PrintQueue:
                 with self._cache_lock:
                     self._cache.update(status_byte=st[0] if st else None,
                                        flags=st[1] if st else None, status_ts=now)
-        except (TransportError, OSError) as e:
+        except Exception as e:  # OSError/TransportError/ValueError on a closed fd, bleak errors...
             log.warning("status refresh failed: %s", e)
-            with self._cache_lock:
-                self._cache["error"] = str(e)
-            self._drop()
+            self._drop("%s: %s" % (type(e).__name__, e))
 
     def _write(self, item: Dict[str, Any]) -> None:
         if item["kind"] == "feed":
@@ -185,21 +204,15 @@ class PrintQueue:
             self.store.set_job(jid, "done")
             return
         error = None
-        for attempt in (1, 2):
-            try:
-                self._write(item)
-                error = None
-                break
-            except (TransportError, OSError) as e:
-                error = "%s: %s" % (type(e).__name__, e)
-                log.warning("job %s attempt %d failed: %s", jid, attempt, error)
-                self._drop()
-                if attempt == 1 and not self._connect():
-                    break
-            except Exception as e:
-                error = "%s: %s" % (type(e).__name__, e)
-                log.exception("job %s failed", jid)
-                break
+        try:
+            self._write(item)
+        except (TransportError, OSError) as e:
+            error = "%s: %s" % (type(e).__name__, e)
+            log.warning("job %s failed, printer lost: %s", jid, error)
+            self._drop(error)
+        except Exception as e:
+            error = "%s: %s" % (type(e).__name__, e)
+            log.exception("job %s failed", jid)
         if error:
             self.store.set_job(jid, "failed", error)
         else:

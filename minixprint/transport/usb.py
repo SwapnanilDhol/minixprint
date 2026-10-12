@@ -50,6 +50,8 @@ class UsbTransport(Transport):
             self.fd = None
 
     def read(self, timeout: float) -> bytes:
+        if self.fd is None:
+            raise TransportError("serial port closed")
         out, end = b"", time.time() + timeout
         while time.time() < end:
             r, _, _ = select.select([self.fd], [], [], 0.1)
@@ -63,6 +65,8 @@ class UsbTransport(Transport):
         return out
 
     def write(self, data: bytes) -> None:
+        if self.fd is None:
+            raise TransportError("serial port closed")
         i = 0
         while i < len(data):
             try:

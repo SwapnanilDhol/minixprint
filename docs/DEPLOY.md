@@ -32,3 +32,29 @@ sudo tailscale serve --set-path /print off           # (on the Pi) remove the fr
 
 Going back to the Mac: unplug from the Pi, plug into the Mac, restart the service if you
 want it to fall back to fake mode.
+
+## Mac as print host
+
+With the printer on the Mac's USB port, run the server as a launchd user agent so it
+starts at login and is restarted if it dies (the Pi uses systemd for the same job).
+
+```bash
+./deploy/macos/install.sh   # from the repo root; needs .venv with `pip install -e .`
+launchctl list | grep minixprint
+curl -s http://127.0.0.1:8090/api/status      # "connected": true
+tail -f ~/Library/Logs/minixprint/server.log
+```
+
+The agent runs `.venv/bin/minixprint serve --host 127.0.0.1 --port 8090` with
+`RunAtLoad` and `KeepAlive`. If the USB device disappears or re-enumerates the server
+keeps answering HTTP, reports `"connected": false` with the error, holds queued jobs, and
+retries the connection every 2 s backing off to 30 s; a job that was mid-print is marked
+failed. Re-run the script after moving the repo or recreating the venv.
+
+Moving the printer to the Pi: either leave the Mac agent (it falls back to fake mode when
+no printer is attached) or remove it:
+
+```bash
+launchctl bootout gui/$UID/com.minixprint.server
+rm ~/Library/LaunchAgents/com.minixprint.server.plist
+```
