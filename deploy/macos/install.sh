@@ -2,7 +2,7 @@
 # Install the MiniX print server as a launchd user agent (no sudo). Idempotent.
 set -euo pipefail
 
-REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+REPO="${MINIXPRINT_REPO:-$(cd "$(dirname "$0")/../.." && pwd)}"
 LABEL=com.minixprint.server
 DEST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOGS="$HOME/Library/Logs/minixprint"
