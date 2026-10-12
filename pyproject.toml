@@ -62,7 +62,7 @@ testpaths = ["tests"]
 
 [tool.setuptools.package-data]
 "minixprint.jobs" = ["data/*.txt"]
-"minixprint.server" = ["static/*"]
+"minixprint.server" = ["static/*", "static/thumbs/*"]
 
 [tool.ruff]
 line-length = 100

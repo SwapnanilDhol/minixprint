@@ -48,7 +48,7 @@ No printer handy? `minixprint serve --fake` archives jobs without printing, and
 `minixprint text "hi" --out hi.png` writes the bitmap. Python 3.9+; on macOS, Bluetooth must be run
 from an app that holds Bluetooth permission (Terminal.app is fine, see [PROTOCOL.md](PROTOCOL.md)).
 
-![Dashboard on desktop and phone](docs/screenshots/dashboard-mobile.png)
+![Dashboard on a phone](docs/screenshots/mobile-fun.jpg)
 
 ## Raspberry Pi + Tailscale
 
