@@ -1,0 +1,16 @@
+[Unit]
+Description=MiniX folder watcher (prints files dropped in ~/print-inbox)
+After=minixprint.service
+Wants=minixprint.service
+
+[Service]
+User=swapnanildhol
+WorkingDirectory=/home/swapnanildhol/minixprint
+ExecStartPre=/bin/mkdir -p /home/swapnanildhol/print-inbox
+ExecStart=/home/swapnanildhol/minixprint/.venv/bin/minixprint watch /home/swapnanildhol/print-inbox --server http://127.0.0.1:8090 --move-to /home/swapnanildhol/print-inbox/printed
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

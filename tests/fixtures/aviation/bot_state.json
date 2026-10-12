@@ -1,0 +1,400 @@
+{
+ "mode": "adsb",
+ "mode_detail": "0 aircraft currently tracked",
+ "schedule": {
+  "enabled": false,
+  "rotation": "adsb 20m \u2192 acars 10m \u2192 vdlm 10m",
+  "detail": "Disabled",
+  "paused_sec": 0.0,
+  "current": null
+ },
+ "logbook": {
+  "airframes": 1428,
+  "sightings": 8609,
+  "messages": 40,
+  "positions": 296518,
+  "farthest_km": 361.2,
+  "farthest_by": "801861",
+  "highest_ft": 126200,
+  "highest_by": "VT-CSL, B429, VTCSL",
+  "best_rssi": -1.6,
+  "best_by": "VTTEM"
+ },
+ "registry": {
+  "available": true,
+  "count": 519991,
+  "age_days": 15.2,
+  "auto_fetch": true
+ },
+ "routes": {
+  "cached": 920,
+  "known": 774,
+  "unknown": 146,
+  "pending": 0,
+  "enabled": true
+ },
+ "runway": {
+  "enabled": true,
+  "airport": "VOMM",
+  "runway": null,
+  "last_confirmed_runway": "25",
+  "confidence": 0.0,
+  "samples": 0,
+  "counts": {},
+  "phases": {},
+  "state": "insufficient",
+  "inferred_state": "insufficient",
+  "committed_state": "insufficient",
+  "session_id": null,
+  "last_fresh_at": null,
+  "pending_event": false,
+  "pending": false,
+  "gap_close_pending": false,
+  "gap_boundary_at": 1791813408.1784859,
+  "pending_runway": null,
+  "queue_depth": 0,
+  "dropped": 0,
+  "health_fault": null,
+  "runways": [
+   "07",
+   "12",
+   "25",
+   "30"
+  ],
+  "backup": {
+   "running": true,
+   "last_result": null,
+   "error": null,
+   "destination": "/home/swapnanildhol/.local/share/aviation_bot/backups"
+  },
+  "metar_collector": {
+   "station": "VOMM",
+   "running": true,
+   "last_poll_at": 1791813435.3191361,
+   "error": null
+  }
+ },
+ "flight_events": [
+  {
+   "id": 25,
+   "ts": 1788760937,
+   "kind": "holding_pattern",
+   "severity": "interesting",
+   "icao": "8016f3",
+   "related_icao": null,
+   "callsign": "RANGER2",
+   "registration": null,
+   "detail": "RANGER2 completed a right-turning loop over 4.6 min with 11.1 km net displacement",
+   "lat": 13.566812,
+   "lon": 79.838128,
+   "alt_ft": 7950.0,
+   "dist_km": 76.10708555273587,
+   "metrics": {
+    "turn_deg": 327.9,
+    "duration_sec": 276,
+    "displacement_km": 11.06,
+    "altitude_span_ft": 50
+   }
+  },
+  {
+   "id": 24,
+   "ts": 1788756480,
+   "kind": "go_around",
+   "severity": "high",
+   "icao": "801876",
+   "related_icao": null,
+   "callsign": "VTTEM",
+   "registration": null,
+   "detail": "VTTEM descended to 650 ft near VOMM, then climbed 375 ft at 512 fpm",
+   "lat": 13.033044,
+   "lon": 80.152925,
+   "alt_ft": 1025.0,
+   "dist_km": 12.654049490705638,
+   "metrics": {
+    "minimum_alt_ft": 650,
+    "minimum_airport_km": 2.7,
+    "climb_ft": 375,
+    "vertical_rate_fpm": 512,
+    "approach_samples": 4
+   }
+  }
+ ],
+ "spotting": [],
+ "spectrum": [
+  {
+   "frequency_khz": 126652,
+   "active_hits": 2,
+   "peak_db": -2.7,
+   "max_snr_db": 19.4,
+   "frequency_mhz": 126.652,
+   "sweeps": 14,
+   "occupancy_pct": 14.29,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 127542,
+   "active_hits": 2,
+   "peak_db": -10.0,
+   "max_snr_db": 12.1,
+   "frequency_mhz": 127.542,
+   "sweeps": 14,
+   "occupancy_pct": 14.29,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 134583,
+   "active_hits": 2,
+   "peak_db": -0.2,
+   "max_snr_db": 24.8,
+   "frequency_mhz": 134.583,
+   "sweeps": 14,
+   "occupancy_pct": 14.29,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 118721,
+   "active_hits": 1,
+   "peak_db": 0.0,
+   "max_snr_db": 24.1,
+   "frequency_mhz": 118.721,
+   "sweeps": 14,
+   "occupancy_pct": 7.14,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 118763,
+   "active_hits": 1,
+   "peak_db": -2.0,
+   "max_snr_db": 23.1,
+   "frequency_mhz": 118.763,
+   "sweeps": 14,
+   "occupancy_pct": 7.14,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 122686,
+   "active_hits": 1,
+   "peak_db": -12.3,
+   "max_snr_db": 12.3,
+   "frequency_mhz": 122.686,
+   "sweeps": 14,
+   "occupancy_pct": 7.14,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 122750,
+   "active_hits": 1,
+   "peak_db": -14.2,
+   "max_snr_db": 11.0,
+   "frequency_mhz": 122.75,
+   "sweeps": 14,
+   "occupancy_pct": 7.14,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 124658,
+   "active_hits": 1,
+   "peak_db": -14.6,
+   "max_snr_db": 9.3,
+   "frequency_mhz": 124.658,
+   "sweeps": 14,
+   "occupancy_pct": 7.14,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 124680,
+   "active_hits": 1,
+   "peak_db": -16.2,
+   "max_snr_db": 8.6,
+   "frequency_mhz": 124.68,
+   "sweeps": 14,
+   "occupancy_pct": 7.14,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 130638,
+   "active_hits": 1,
+   "peak_db": -15.3,
+   "max_snr_db": 8.2,
+   "frequency_mhz": 130.638,
+   "sweeps": 14,
+   "occupancy_pct": 7.14,
+   "role": null,
+   "label": null,
+   "confidence": null
+  },
+  {
+   "frequency_khz": 130660,
+   "active_hits": 1,
+   "peak_db": -13.0,
+   "max_snr_db": 9.9,
+   "frequency_mhz": 130.66,
+   "sweeps": 14,
+   "occupancy_pct": 7.14,
+   "role": null,
+   "label": null,
+   "confidence": null
+  }
+ ],
+ "channels": [
+  {
+   "frequency_khz": 118100,
+   "role": "preset",
+   "label": "Chennai Tower",
+   "evidence_count": 48,
+   "score": 240.0,
+   "source": "configuration",
+   "last_evidence": null,
+   "updated_at": 1791813067,
+   "frequency_mhz": 118.1,
+   "confidence": 1.0
+  },
+  {
+   "frequency_khz": 121500,
+   "role": "preset",
+   "label": "VHF Emergency Guard",
+   "evidence_count": 48,
+   "score": 240.0,
+   "source": "configuration",
+   "last_evidence": null,
+   "updated_at": 1791813067,
+   "frequency_mhz": 121.5,
+   "confidence": 1.0
+  },
+  {
+   "frequency_khz": 121900,
+   "role": "preset",
+   "label": "Chennai Ground",
+   "evidence_count": 48,
+   "score": 240.0,
+   "source": "configuration",
+   "last_evidence": null,
+   "updated_at": 1791813067,
+   "frequency_mhz": 121.9,
+   "confidence": 1.0
+  },
+  {
+   "frequency_khz": 127450,
+   "role": "preset",
+   "label": "Chennai ATIS",
+   "evidence_count": 48,
+   "score": 240.0,
+   "source": "configuration",
+   "last_evidence": null,
+   "updated_at": 1791813067,
+   "frequency_mhz": 127.45,
+   "confidence": 1.0
+  },
+  {
+   "frequency_khz": 127900,
+   "role": "preset",
+   "label": "Chennai Approach",
+   "evidence_count": 48,
+   "score": 240.0,
+   "source": "configuration",
+   "last_evidence": null,
+   "updated_at": 1791813067,
+   "frequency_mhz": 127.9,
+   "confidence": 1.0
+  },
+  {
+   "frequency_khz": 132250,
+   "role": "preset",
+   "label": "Chennai Radar",
+   "evidence_count": 48,
+   "score": 240.0,
+   "source": "configuration",
+   "last_evidence": null,
+   "updated_at": 1791813067,
+   "frequency_mhz": 132.25,
+   "confidence": 1.0
+  }
+ ],
+ "propagation_forecast": {
+  "enabled": true,
+  "status": "building baseline",
+  "probability": null,
+  "confidence": 0.0,
+  "detail": "Needs at least four days in three directions.",
+  "directions": []
+ },
+ "scanner": {
+  "status": "stopped",
+  "band": "118M:137M:25k",
+  "samples": 0,
+  "candidate_mhz": null,
+  "candidate_db": null,
+  "candidate_snr_db": null,
+  "hold": false,
+  "updated_at": null,
+  "active_channels": 0
+ },
+ "vor": {
+  "status": "idle",
+  "frequency_mhz": null,
+  "radial_deg": null,
+  "confidence": 0.0,
+  "reference_phase_deg": null,
+  "variable_phase_deg": null,
+  "variable_amplitude": null,
+  "reference_amplitude": null,
+  "updated_at": null,
+  "samples": 0
+ },
+ "voice": {
+  "status": "idle",
+  "frequency_mhz": null,
+  "level_dbfs": null,
+  "threshold_dbfs": null,
+  "gate": "closed",
+  "clips": 0,
+  "last_clip_at": null,
+  "last_clip_path": null,
+  "updated_at": null
+ },
+ "alerts": {
+  "quiet_sec": 0,
+  "watchlist": []
+ },
+ "active_action": "idle",
+ "dead_letters": 0,
+ "events": [
+  {
+   "time": "19:21:11",
+   "source": "telegram",
+   "html": "\u2705 <b>ADS-B Mode Active</b>\n\n\ud83d\udcca Dashboard: http://100.x.y.z:8080\n\ud83d\udce1 Tracking aircraft from local dump1090-fa data\n\ud83d\udd15 Routine traffic is logged silently\n\ud83d\udd14 Alerts: emergencies, watchlist, first sightings, records, overhead passes"
+  },
+  {
+   "time": "19:21:09",
+   "source": "telegram",
+   "html": "\ud83d\ude80 <b>Aviation Bot Ready</b>\n\n<b>Core commands</b>\n/acars \u2014 ACARS decoder\n/vdlm \u2014 VDL Mode 2 decoder\n/hfdl \u2014 long-range HF datalink decoder\n/adsb \u2014 ADS-B tracker\n/satacars \u2014 JAERO-fed satellite ACARS\n/tune [MHz] \u2014 manual audio tuning\n/tunehf [MHz] \u2014 HF USB tuning\n/signal [MHz] \u2014 live signal placement monitor\n/scan \u2014 scan airband and auto-tune a channel\n/vor [MHz] \u2014 experimental VOR radial decoder\n/voice [MHz] \u2014 squelch-gated ATC voice capture\n/transcripts [query] \u2014 search captured clips\n/status \u2014 current mode and counters\n/health \u2014 RTL and service checks\n\n<b>Logbook</b>\n/watch [id] \u2014 alert on a registration, type, hex, or callsign\n/watchlist \u2014 review watches\n/logbook \u2014 lifetime totals\n/records \u2014 farthest, highest, best signal\n/coverage \u2014 reception range by direction\n/backfill \u2014 name aircraft logged before the registry\n/routes \u2014 flight route cache\n/runway \u2014 active runway at the field\n/digest \u2014 today's summary\n/events \u2014 go-arounds, holds, formations, and proximity\n/spot \u2014 best aircraft to look for now\n/spectrum \u2014 historical airband occupancy\n/channels \u2014 inferred channel identities\n/propagation \u2014 empirical 12-hour RF outlook\n/weekly \u2014 seven-day station report\n/quiet [2h] \u2014 mute non-critical alerts\n\n<b>System</b>\n/schedule \u2014 automatic mode rotation\n/registry \u2014 aircraft database status\n/update \u2014 pull latest code and restart\n/shutdownpi \u2014 shut the Raspberry Pi down\n/stop \u2014 stop current mode\n\nWeb dashboard: http://100.x.y.z:8070\nACARS dashboard: http://100.x.y.z:8081\nADS-B dashboard: http://100.x.y.z:8080\nSignal monitor: http://100.x.y.z:8090"
+  }
+ ],
+ "https_url": null,
+ "https_error": null,
+ "urls": {
+  "acars": "http://100.x.y.z:8070/datalink",
+  "adsb": "http://100.x.y.z:8080",
+  "signal": "http://100.x.y.z:8090",
+  "audio": "http://100.x.y.z:8888/stream",
+  "web": "http://100.x.y.z:8070"
+ }
+}

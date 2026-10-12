@@ -1,0 +1,76 @@
+*PPD-Adobe: "4.3"
+*FormatVersion: "4.3"
+*FileVersion: "1.0"
+*LanguageVersion: English
+*LanguageEncoding: ISOLatin1
+*PCFileName: "MINIXPRT.PPD"
+*Manufacturer: "Seznik"
+*Product: "(MiniX)"
+*ModelName: "MiniX thermal printer"
+*ShortNickName: "MiniX"
+*NickName: "Seznik MiniX 48mm thermal (minixprint)"
+*PSVersion: "(3010.000) 0"
+*LanguageLevel: "3"
+*ColorDevice: False
+*DefaultColorSpace: Gray
+*FileSystem: False
+*Throughput: "1"
+*LandscapeOrientation: Plus90
+*TTRasterizer: Type42
+*cupsVersion: 2.2
+*cupsModelNumber: 0
+*cupsManualCopies: False
+*cupsFilter: "application/pdf 0 -"
+*cupsFilter2: "application/vnd.cups-pdf application/pdf 0 -"
+
+*% 384 dots at 203 dpi = 48 mm = 136 pt. Roll: the length is free (apps may use Custom).
+*OpenUI *PageSize/Media Size: PickOne
+*OrderDependency: 10 AnySetup *PageSize
+*DefaultPageSize: Roll48x200
+*PageSize Roll48x100/48 mm x 100 mm: "<</PageSize[136 283]/ImagingBBox null>>setpagedevice"
+*PageSize Roll48x200/48 mm x 200 mm: "<</PageSize[136 567]/ImagingBBox null>>setpagedevice"
+*PageSize Roll48x400/48 mm x 400 mm: "<</PageSize[136 1134]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageSize
+
+*OpenUI *PageRegion/Media Size: PickOne
+*OrderDependency: 10 AnySetup *PageRegion
+*DefaultPageRegion: Roll48x200
+*PageRegion Roll48x100/48 mm x 100 mm: "<</PageSize[136 283]/ImagingBBox null>>setpagedevice"
+*PageRegion Roll48x200/48 mm x 200 mm: "<</PageSize[136 567]/ImagingBBox null>>setpagedevice"
+*PageRegion Roll48x400/48 mm x 400 mm: "<</PageSize[136 1134]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageRegion
+
+*DefaultImageableArea: Roll48x200
+*ImageableArea Roll48x100/48 mm x 100 mm: "0 0 136 283"
+*ImageableArea Roll48x200/48 mm x 200 mm: "0 0 136 567"
+*ImageableArea Roll48x400/48 mm x 400 mm: "0 0 136 1134"
+*DefaultPaperDimension: Roll48x200
+*PaperDimension Roll48x100/48 mm x 100 mm: "136 283"
+*PaperDimension Roll48x200/48 mm x 200 mm: "136 567"
+*PaperDimension Roll48x400/48 mm x 400 mm: "136 1134"
+
+*% Any length from 20 mm to 2 m, width fixed at 48 mm; no margins.
+*MaxMediaWidth: "136"
+*MaxMediaHeight: "5669"
+*HWMargins: 0 0 0 0
+*CustomPageSize True: "pop pop pop <</PageSize[5 -2 roll]/ImagingBBox null>>setpagedevice"
+*ParamCustomPageSize Width: 1 points 136 136
+*ParamCustomPageSize Height: 2 points 57 5669
+*ParamCustomPageSize WidthOffset: 3 points 0 0
+*ParamCustomPageSize HeightOffset: 4 points 0 0
+*ParamCustomPageSize Orientation: 5 int 0 0
+
+*OpenUI *Resolution/Resolution: PickOne
+*OrderDependency: 20 AnySetup *Resolution
+*DefaultResolution: 203dpi
+*Resolution 203dpi/203 dpi: "<</HWResolution[203 203]>>setpagedevice"
+*CloseUI: *Resolution
+
+*OpenUI *ColorModel/Color Mode: PickOne
+*OrderDependency: 10 AnySetup *ColorModel
+*DefaultColorModel: Gray
+*ColorModel Gray/Grayscale: "<</cupsColorSpace 18/cupsColorOrder 0/cupsBitsPerColor 8>>setpagedevice"
+*CloseUI: *ColorModel
+
+*DefaultFont: Courier
+*Font Courier: Standard "(002.004S)" Standard ROM

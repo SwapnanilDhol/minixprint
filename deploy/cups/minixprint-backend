@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""CUPS backend for the MiniX print server (docs/CUPS.md).
+
+CUPS runs:  minixprint job-id user title copies options [file]   (file absent -> stdin)
+and with no arguments asks backends to describe themselves (device discovery).
+Device URI: minixprint://host[:port][/root-path]   (https when port is 443 or the scheme is
+minixprints://). The spooled job is a PDF (the PPD's *cupsFilter), which is rasterised to
+384 px wide greyscale, pages stacked, and POSTed to {server}/api/print/image?dither=atkinson.
+
+Exit codes follow cups-backend(7): 0 OK, 1 FAILED, 6 RETRY (server unreachable / 5xx).
+Status goes to stderr as STATE:/INFO:/ERROR: lines.
+"""
+import os
+import sys
+import urllib.error
+import urllib.request
+import uuid
+from urllib.parse import urlsplit
+
+# install.sh puts raster.py next to the backend as minixprint_raster.py; from a checkout the
+# package import works instead.
+sys.path.insert(0, "/usr/local/lib/minixprint-cups")
+try:
+    import minixprint_raster as raster
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", ".."))
+    from minixprint import raster
+
+OK, FAILED, RETRY = 0, 1, 6
+DEFAULT_URI = "minixprint://localhost:8090"
+
+
+def log(kind, msg):
+    sys.stderr.write("%s: %s\n" % (kind, msg))
+    sys.stderr.flush()
+
+
+def server_url(uri):
+    """minixprint://host:port/root -> http://host:port/root (https for port 443 / minixprints)."""
+    u = urlsplit(uri)
+    if u.scheme not in ("minixprint", "minixprints") or not u.hostname:
+        raise ValueError("bad device URI %r (want minixprint://host[:port][/root-path])" % uri)
+    https = u.scheme == "minixprints" or u.port == 443
+    host = u.hostname if ":" not in u.hostname else "[%s]" % u.hostname
+    netloc = host + (":%d" % u.port if u.port else "")
+    return "%s://%s%s" % ("https" if https else "http", netloc, u.path.rstrip("/"))
+
+
+def multipart(field, filename, data, ctype):
+    boundary = uuid.uuid4().hex
+    head = ('--%s\r\nContent-Disposition: form-data; name="%s"; filename="%s"\r\n'
+            "Content-Type: %s\r\n\r\n" % (boundary, field, filename, ctype)).encode()
+    body = head + data + ("\r\n--%s--\r\n" % boundary).encode()
+    return body, "multipart/form-data; boundary=" + boundary
+
+
+def post_png(base, png, title):
+    body, ctype = multipart("file", "cups-job.png", png, "image/png")
+    req = urllib.request.Request(base + "/api/print/image?dither=atkinson", data=body,
+                                 headers={"Content-Type": ctype, "User-Agent": "minixprint-cups"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def main(argv):
+    if len(argv) == 1:
+        print('direct %s "MiniX" "MiniX thermal printer"' % DEFAULT_URI)
+        return OK
+    if len(argv) < 6:
+        sys.stderr.write("Usage: %s job-id user title copies options [file]\n" % argv[0])
+        return FAILED
+    title = argv[3]
+    try:
+        base = server_url(os.environ.get("DEVICE_URI", DEFAULT_URI))
+    except ValueError as e:
+        log("ERROR", e)
+        return FAILED
+
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="minixcups") as tmp:
+        path = argv[6] if len(argv) > 6 else os.path.join(tmp, "job.pdf")
+        if len(argv) <= 6:
+            with open(path, "wb") as f:
+                while True:
+                    chunk = sys.stdin.buffer.read(1 << 16)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+        log("STATE", "+connecting-to-device")
+        log("INFO", "Rendering %s" % title)
+        try:
+            img, engine = raster.rasterise_pdf(path)
+        except Exception as e:
+            log("ERROR", "rasterising failed: %s" % e)
+            return FAILED
+        log("INFO", "Rasterised %dx%d with %s" % (img.width, img.height, engine))
+        png = raster.to_png_bytes(img)
+        try:
+            log("INFO", "Sending to %s" % base)
+            reply = post_png(base, png, title)
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", "replace")[:200]
+            log("ERROR", "server said %d: %s" % (e.code, detail))
+            log("STATE", "-connecting-to-device")
+            return RETRY if e.code >= 500 else FAILED
+        except (urllib.error.URLError, OSError) as e:
+            log("STATE", "+offline-report")
+            log("ERROR", "cannot reach %s: %s" % (base, e))
+            return RETRY
+        log("STATE", "-connecting-to-device,offline-report")
+        log("INFO", "Queued: %s" % reply.strip()[:200])
+    return OK
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -1,0 +1,2 @@
+# Seznik MiniX thermal printer (USB CDC-ACM) -> stable /dev/minix
+SUBSYSTEM=="tty", ATTRS{idVendor}=="3021", ATTRS{idProduct}=="6001", SYMLINK+="minix", GROUP="dialout", MODE="0660"

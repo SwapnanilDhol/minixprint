@@ -1,0 +1,16 @@
+[Unit]
+Description=MiniX thermal print server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=swapnanildhol
+WorkingDirectory=/home/swapnanildhol/minixprint
+ExecStart=/home/swapnanildhol/minixprint/.venv/bin/minixprint serve --host 127.0.0.1 --port 8090 --root-path /print
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+# Optional: Environment=MINIXPRINT_DATA_DIR=/var/lib/minixprint
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,49 @@
+{
+ "airport": "VOMM",
+ "timezone": "Asia/Kolkata",
+ "grouping": "day",
+ "timeline": [
+  {
+   "state": "unknown",
+   "start_at": 1791773446.6,
+   "end_at": 1791783446.6
+  },
+  {
+   "state": "active",
+   "runway": "07",
+   "start_at": 1791783446.6,
+   "end_at": 1791804446.6
+  },
+  {
+   "state": "unknown",
+   "start_at": 1791804446.6,
+   "end_at": 1791804646.6
+  },
+  {
+   "state": "active",
+   "runway": "25",
+   "start_at": 1791804646.6,
+   "end_at": 1791808446.6
+  },
+  {
+   "state": "active",
+   "runway": "07",
+   "start_at": 1791808446.6,
+   "end_at": 1791811646.6
+  },
+  {
+   "state": "active",
+   "runway": "25",
+   "start_at": 1791811646.6,
+   "end_at": 1791813416.6
+  }
+ ],
+ "runways": {
+  "25": {
+   "supported_seconds": 9000
+  },
+  "07": {
+   "supported_seconds": 24000
+  }
+ }
+}
