@@ -245,20 +245,21 @@ dialog#sheet[open]::backdrop { background: rgba(0,0,0,.4); }
 /* ---- desktop: top tabs ---- */
 @media (min-width: 900px) {
   :root { --tabs-h: 0px; }
-  #top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: var(--sat) 24px 0; border-bottom: 1px solid var(--line); background: var(--bg); }
+  /* brand | chips (shrinks, clips) | tabs | settings — nothing overlaps at any width ≥ 900px */
+  #top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; column-gap: 14px; align-items: center; padding: var(--sat) 24px 0; border-bottom: 1px solid var(--line); background: var(--bg); }
   #bar { display: contents; }
-  #bar > .brand { grid-column: 1; grid-row: 1; padding: 10px 0; }
-  .chips { grid-column: 1; grid-row: 1; flex: none; margin-left: 190px; justify-self: start; }
-  #btn-settings { grid-column: 3; grid-row: 1; justify-self: end; }
-  #tabs { position: static; grid-column: 2; grid-row: 1; border: 0; background: transparent; padding: 0; gap: 4px; }
-  #tabs button { flex-direction: row; gap: 8px; min-height: 48px; padding: 0 18px; font-size: 15px; border-radius: 12px; flex: none; }
+  #bar > .brand { grid-column: 1; grid-row: 1; padding: 10px 0; max-width: 300px; min-width: 0; }
+  .chips { grid-column: 2; grid-row: 1; min-width: 0; }
+  #tabs { position: static; grid-column: 3; grid-row: 1; border: 0; background: transparent; padding: 0; gap: 4px; }
+  #btn-settings { grid-column: 4; grid-row: 1; justify-self: end; }
+  #tabs button { flex-direction: row; gap: 8px; min-height: 48px; padding: 0 14px; font-size: 15px; border-radius: 12px; flex: none; }
   #tabs button[aria-selected="true"] { background: var(--card); box-shadow: var(--shadow); }
   @media (hover: hover) { #tabs button:hover { color: var(--ink); } }
   main { max-width: 1100px; padding: 16px 24px 48px; }
   .grid { grid-template-columns: repeat(4, 1fr); }
   .hgrid { grid-template-columns: repeat(5, 1fr); }
-  #p-print { display: grid; grid-template-columns: 3fr 2fr; gap: 14px; align-items: start; max-width: 1100px; }
-  #p-print > * { margin-top: 0; }
+  #p-print { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; align-items: start; max-width: 1100px; }
+  #p-print > * { margin-top: 0; min-width: 0; }
   #p-print .compose { grid-column: 1; grid-row: 1 / span 2; }
   #p-print .compose textarea { min-height: 220px; }
   #p-print .tiles3 { grid-column: 2; grid-row: 1; grid-template-columns: 1fr; }
