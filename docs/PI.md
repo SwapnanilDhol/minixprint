@@ -27,8 +27,14 @@ that `usblp` may claim; that's harmless, we only use the ACM port.
   well as `/dev/cu.usbmodem*` on macOS.
 - USB also charges the printer, so it's always at 100 %.
 
-**BLE (fallback).** Pi 5 has a BT controller. `bleak` works on BlueZ. The printer only
-advertises when USB is unplugged. Not the production path.
+**BLE.** Pi 5 has a BT controller; `pip install bleak` into the venv. The printer only
+advertises when USB is unplugged (power-cycle it after unplugging — BLE stays off until
+reboot), and only one host can hold the BLE connection, so stop any Mac server first.
+BlueZ refuses to connect with `br-connection-profile-unavailable` because the MiniX
+advertises as dual-mode (BR/EDR + LE) and BlueZ tries a Classic profile first. Fix: run the
+adapter LE-only — in `/etc/bluetooth/main.conf` under `[General]` set
+`ControllerMode = le`, `sudo systemctl restart bluetooth`, `bluetoothctl remove <printer addr>`,
+restart minixprint. Verified 2026-10-12 on swap-pi. Downside vs USB: battery only (no charging).
 
 ## Service
 
