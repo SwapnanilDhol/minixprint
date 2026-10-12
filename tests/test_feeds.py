@@ -24,6 +24,9 @@ def ctx_for(routes):
     return JobContext(settings=dict(DEFAULT_SETTINGS), http=FakeSession(routes))
 
 
+BOT = {"source": "bot", "print_binary": True}  # the fixture's newest messages are encrypted H1/T1 blobs
+
+
 def bot_ctx(items=None):
     return ctx_for({"/api/messages": {"items": MSGS["items"] if items is None else items}})
 
@@ -49,7 +52,9 @@ def test_validate_params():
     with pytest.raises(ValueError):
         feeds.validate(metar, {"station": "VOMM", "bogus": 1})
     p = feeds.validate(acars, {"skip_labels": "Q0, _d"})
-    assert p == {"source": "bot", "skip_labels": ["Q0", "_d"], "min_text_len": 1}
+    assert p == {"source": "auto", "udp_port": 5570, "print_binary": False,
+                 "skip_labels": ["Q0", "_d"], "min_text_len": 1}
+    assert feeds.validate(acars, {"print_binary": "true", "udp_port": "5571"})["print_binary"] is True
     assert feeds.validate(acars, {})["skip_labels"] == ["Q0", "_d", "Q1"]
     with pytest.raises(ValueError):
         feeds.validate(acars, {"source": "nope"})
@@ -82,7 +87,7 @@ def test_metar_render():
 # --- acars -------------------------------------------------------------------------------
 
 def test_acars_first_poll_capped_and_collapsed():
-    items, cur = acars.poll(feeds.validate(acars, {}), None, bot_ctx())
+    items, cur = acars.poll(feeds.validate(acars, BOT), None, bot_ctx())
     assert cur == 40
     # newest three raw messages (40, 39, 38) are one flight within 20 s -> one ticket
     assert len(items) == 1 and [m["id"] for m in items[0]["messages"]] == [38, 39, 40]
@@ -90,7 +95,7 @@ def test_acars_first_poll_capped_and_collapsed():
 
 
 def test_acars_only_ids_above_cursor():
-    p = feeds.validate(acars, {})
+    p = feeds.validate(acars, BOT)
     items, cur = acars.poll(p, 36, bot_ctx())
     ids = [m["id"] for g in items for m in g["messages"]]
     assert ids == [37, 38, 39, 40] and cur == 40
@@ -103,9 +108,9 @@ def test_acars_skip_labels_and_min_len():
              {"id": 42, "ts": 1787670100, "callsign": "AI102", "label": "H1", "text": ""},
              {"id": 43, "ts": 1787670200, "callsign": "AI103", "label": "_d", "text": "ack"}]
     ctx = bot_ctx(extra + MSGS["items"])
-    items, cur = acars.poll(feeds.validate(acars, {"min_text_len": 1}), 40, ctx)
+    items, cur = acars.poll(feeds.validate(acars, dict(BOT, min_text_len=1)), 40, ctx)
     assert items == [] and cur == 43  # all skipped, but the cursor still moves past them
-    items, _ = acars.poll(feeds.validate(acars, {"skip_labels": [], "min_text_len": 0}), 40, ctx)
+    items, _ = acars.poll(feeds.validate(acars, dict(BOT, skip_labels=[], min_text_len=0)), 40, ctx)
     assert [g["flight"] for g in items] == ["AI101", "AI102", "AI103"]
 
 
@@ -118,12 +123,12 @@ def test_acars_collapse_window():
 
 def test_acars_source_down():
     with pytest.raises(RuntimeError):
-        acars.poll(feeds.validate(acars, {}), None, ctx_for({}))
+        acars.poll(feeds.validate(acars, {"source": "bot"}), None, ctx_for({}))
 
 
 def test_acars_render():
     ctx = make_ctx()
-    items, _ = acars.poll(feeds.validate(acars, {}), None, bot_ctx())
+    items, _ = acars.poll(feeds.validate(acars, BOT), None, bot_ctx())
     img = acars.render(items[0], {}, ctx)
     assert img.mode == "1" and img.width == 384 and img.height > 150
 
@@ -214,7 +219,7 @@ def test_error_recorded_and_cursor_kept(app, client):
 
 
 def test_acars_feed_end_to_end(app, client):
-    fid = client.post("/api/feeds", json={"kind": "acars"}).json()["id"]
+    fid = client.post("/api/feeds", json={"kind": "acars", "params": BOT}).json()["id"]
     use_http(app, {"/api/messages": MSGS})
     f = client.post("/api/feeds/%d/poll" % fid).json()
     assert f["printed"] == 1 and f["params"]["source"] == "bot"
@@ -232,7 +237,7 @@ def test_preview(app, client):
     assert app.state.store.feed(fid)["cursor"] is None and jobs_of(client) == []
     use_http(app, {})
     assert client.get("/api/feeds/%d/preview" % fid).status_code == 502
-    aid = client.post("/api/feeds", json={"kind": "acars"}).json()["id"]
+    aid = client.post("/api/feeds", json={"kind": "acars", "params": {"source": "bot"}}).json()["id"]
     use_http(app, {"/api/messages": {"items": []}})
     assert client.get("/api/feeds/%d/preview" % aid).status_code == 404
 

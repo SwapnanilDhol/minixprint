@@ -10,6 +10,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional
 
 from .. import feeds as kinds
+from ..feeds import acars_udp
 from ..jobs import JobContext
 from .queue import PrintQueue
 from .store import Store
@@ -34,10 +35,21 @@ class FeedManager:
 
     # --- lifecycle ---------------------------------------------------------
     def start(self) -> None:
+        self._listen_for_acars()
         self._thread = threading.Thread(target=self._loop, name="feeds", daemon=True)
         self._thread.start()
 
+    def _listen_for_acars(self) -> None:
+        """Bind the acarsdec UDP port now, so traffic is buffered from boot, not from the first poll."""
+        for f in self.store.feeds():
+            if f["enabled"] and f["kind"] == "acars" and f["params"].get("source", "auto") in ("auto", "acarsdec"):
+                try:
+                    acars_udp.get_listener(int(f["params"].get("udp_port") or acars_udp.DEFAULT_PORT))
+                except RuntimeError as e:
+                    log.warning("%s", e)
+
     def stop(self) -> None:
+        acars_udp.close_all()
         self._stop.set()
         if self._thread:
             self._thread.join(3)

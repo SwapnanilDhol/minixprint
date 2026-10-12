@@ -16,7 +16,7 @@ unique ``"key"`` (used for the print-queue dedupe key) and ``"ts"`` (unix time, 
 ``cursor`` is any JSON value (None on a brand-new feed) that ``poll`` handed back last
 time. ``ctx`` is a ``minixprint.jobs.JobContext``. See docs/FEEDS.md.
 
-PARAMS field ``type`` is one of ``icao``, ``text``, ``int``, ``enum`` (with ``options``)
+PARAMS field ``type`` is one of ``icao``, ``text``, ``int``, ``bool``, ``enum`` (with ``options``)
 or ``list`` (list of strings); other keys: ``required``, ``default``, ``label``.
 """
 import importlib
@@ -75,6 +75,14 @@ def _coerce(name: str, spec: Dict[str, Any], v: Any) -> Any:
             return int(v)
         except (TypeError, ValueError):
             raise ValueError("param %r must be an integer" % name)
+    if t == "bool":
+        if isinstance(v, str):
+            if v.strip().lower() in ("1", "true", "yes", "on"):
+                return True
+            if v.strip().lower() in ("0", "false", "no", "off", ""):
+                return False
+            raise ValueError("param %r must be true or false" % name)
+        return bool(v)
     if t == "enum":
         if v not in spec["options"]:
             raise ValueError("param %r must be one of %s" % (name, ", ".join(spec["options"])))

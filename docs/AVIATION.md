@@ -9,7 +9,7 @@ records what's there (inspected 2026-10-12) and how the printer plugs into it.
 |---|---|---|
 | `dump1090-fa` | systemd, RTL-SDR `0bda:2838` | writes `/run/dump1090-fa/aircraft.json` every second (location in `receiver.json`) |
 | **aviation_bot** | `~/aviation_bot` (github.com/SwapnanilDhol/aviation_bot), `aviation-bot.service`, `python3 main.py` | Telegram bot + web dashboard on **:8070**; SQLite store; home airport **VOMM / MAA** (Chennai) |
-| ACARS Hub | Docker `acarshub`, web :8081 | ACARS / VDL2 via `acarsdec`, `dumpvdl2`, UDP relay 5550→5551,5560 |
+| ACARS Hub | Docker `acarshub`, web :8081 | ACARS / VDL2 via `acarsdec`, `dumpvdl2`, UDP relay (`~/relay.py`, run by hand) 5550→5551,5560,**5570** (minixprint ACARS feed) |
 | Icecast | :8888 | ATC audio stream, `/radio` on tailscale serve |
 | CUPS | :631 | already running — virtual-printer backend is easy here |
 | Tailscale serve | `https://swap-pi.<tailnet>.ts.net` | `/` → 127.0.0.1:8070 (bot), `/radio` → 8888. **The print server will take `/print` → 8090.** |
@@ -146,3 +146,20 @@ sightings, messages, farthest, highest — all-time totals) and `/api/routes/rec
 the last 24 h / 7 days (flown-route count, distinct airframes, top routes, recent airframes).
 The bot has no "new airframes" list over HTTP, so the recent-airframes list stands in for it.
 Bot down → what aircraft.json says right now (tracked, farthest, highest, message total).
+
+## ACARS
+
+`acarsdec` (built with libacars 2.2.1) emits JSON over UDP 5550; `~/relay.py` fans it out to
+ACARS Hub (5551), the Telegram script (5560) and minixprint (5570). The `acars` feed
+(docs/FEEDS.md) listens on 5570 and prints what a human can use:
+
+* **Everything libacars decodes** (acarsdec's `libacars` JSON object): ADS-C position reports with
+  distance/bearing from home, CPDLC, MIAM, media advisories, ARINC-622.
+* **Readable text** (position reports, OOOI, free text).
+* **Not** encrypted airline payloads (e.g. VT-BWT label H1·T1: base64-looking blobs). They are
+  skipped unless `print_binary` is set, and then print as a one-line placeholder.
+
+The bot's own `/api/messages` drops the libacars object, so the `bot` source can only show its
+`decoded`/`summary` fields. The receiver shares one RTL-SDR between modes: ACARS only flows while
+the bot is in `/acars` mode. dumpvdl2 records (ACARS under `vdl2.avlc.acars`) are parsed too, as
+link `VDL2`; ATN CPDLC frames (no ACARS envelope) are ignored.
