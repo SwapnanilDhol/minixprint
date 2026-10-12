@@ -12,8 +12,10 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
+from .. import feeds as feed_kinds
 from .. import jobs, render
 from ..render import WIDTH
+from .feeds import FeedError, FeedManager
 from .queue import PrintQueue
 from .scheduler import Scheduler, SpecError, parse_spec
 from .store import Store
@@ -61,6 +63,13 @@ class SchedulePatch(BaseModel):
     enabled: Optional[bool] = None
     spec: Optional[str] = None
     params: Optional[Dict[str, Any]] = None
+
+
+class FeedCreate(BaseModel):
+    kind: str
+    params: Dict[str, Any] = {}
+    interval_s: Optional[int] = Field(None, ge=1, le=86400)
+    enabled: bool = False
 
 
 class SettingsBody(BaseModel):
@@ -122,18 +131,22 @@ def create_app(data_dir: Optional[str] = None, fake: bool = False, root_path: Op
                                  "%s: %s" % (type(e).__name__, e))
 
     sched = Scheduler(store, run_scheduled, tz)
+    feeds = FeedManager(store, queue, settings)
 
     @asynccontextmanager
     async def lifespan(app):
         queue.start()
         if scheduler:
             sched.start()
+            feeds.start()
         yield
+        feeds.stop()
         sched.stop()
         queue.stop()
 
     app = FastAPI(title="minixprint", root_path=root, lifespan=lifespan)
     app.state.queue, app.state.store, app.state.scheduler = queue, store, sched
+    app.state.feeds = feeds
 
     # --- helpers -----------------------------------------------------------
     def finish(request: Request, img: Image.Image, kind: str, summary: str,
@@ -295,6 +308,66 @@ def create_app(data_dir: Optional[str] = None, fake: bool = False, root_path: Op
         if not store.delete_schedule(sid):
             raise HTTPException(404, "no such schedule")
         return Response(status_code=204)
+
+    # --- feeds -------------------------------------------------------------
+    def _feed_or_404(fid: int) -> Dict[str, Any]:
+        f = store.feed(fid)
+        if not f:
+            raise HTTPException(404, "no such feed")
+        return f
+
+    @app.get("/api/feeds/kinds")
+    def feed_kinds_list():
+        return [{"kind": k, "description": getattr(m, "DESCRIPTION", ""), "params": m.PARAMS,
+                 "default_interval_s": m.DEFAULT_INTERVAL_S}
+                for k, m in sorted(feed_kinds.discover().items())]
+
+    @app.get("/api/feeds")
+    def list_feeds():
+        return [feeds.view(f) for f in store.feeds()]
+
+    @app.post("/api/feeds", status_code=201)
+    def add_feed(b: FeedCreate):
+        try:
+            return feeds.view(feeds.create(b.kind, b.params, b.interval_s, b.enabled))
+        except FeedError as e:
+            raise HTTPException(422, str(e))
+
+    @app.post("/api/feeds/{fid}/start")
+    def start_feed(fid: int):
+        _feed_or_404(fid)
+        store.update_feed(fid, enabled=True)
+        return feeds.view(store.feed(fid))
+
+    @app.post("/api/feeds/{fid}/stop")
+    def stop_feed(fid: int):
+        _feed_or_404(fid)
+        store.update_feed(fid, enabled=False)
+        return feeds.view(store.feed(fid))
+
+    @app.delete("/api/feeds/{fid}", status_code=204)
+    def del_feed(fid: int):
+        if not store.delete_feed(fid):
+            raise HTTPException(404, "no such feed")
+        return Response(status_code=204)
+
+    @app.post("/api/feeds/{fid}/poll")
+    def poll_feed(fid: int):
+        _feed_or_404(fid)
+        return feeds.view(feeds.poll(fid))
+
+    @app.get("/api/feeds/{fid}/preview")
+    def preview_feed(fid: int):
+        _feed_or_404(fid)
+        try:
+            img = feeds.preview(fid)
+        except Exception as e:
+            raise HTTPException(502, "%s: %s" % (type(e).__name__, e))
+        if img is None:
+            raise HTTPException(404, "nothing to preview yet")
+        buf = io.BytesIO()
+        img.save(buf, "PNG")
+        return Response(buf.getvalue(), media_type=PNG, headers={"X-Height-Px": str(img.height)})
 
     # --- settings ----------------------------------------------------------
     @app.get("/api/settings")

@@ -114,6 +114,19 @@ if(!location.pathname.endsWith("/"))location.replace(location.pathname+"/"+locat
   </form>
 </section>
 
+<section class="card" id="live">
+  <h2>Live</h2>
+  <ul id="feeds" class="list"></ul>
+  <form id="feed-form" class="stack">
+    <div class="row">
+      <select id="f-kind"></select>
+      <label>Every <input id="f-int" type="number" min="5" style="width:5em"> s</label>
+    </div>
+    <div id="f-params" class="stack"></div>
+    <button class="primary" type="submit">Add &amp; start</button>
+  </form>
+</section>
+
 <section class="card">
   <h2>History</h2>
   <div id="hist" class="strip"></div>

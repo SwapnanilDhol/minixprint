@@ -43,3 +43,15 @@ Exit status is 1 (message on stderr) if the printer can't be reached or an argum
 
 Unlike the commands above it talks to a running `minixprint serve`, not the printer. See
 [WATCH.md](WATCH.md).
+
+## Feeds
+
+Manage live feeds on a running server (docs/FEEDS.md); `--server URL` defaults to `http://127.0.0.1:8090`.
+
+```
+minixprint feeds                      # list
+minixprint feeds kinds
+minixprint feeds add metar VOMM       # add and start; --interval S, --paused
+minixprint feeds add acars skip_labels=Q0,_d source=bot
+minixprint feeds start|stop|poll|rm ID
+```

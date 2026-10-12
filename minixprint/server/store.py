@@ -28,6 +28,19 @@ CREATE TABLE IF NOT EXISTS schedules (
     created REAL NOT NULL,
     last_run REAL
 );
+CREATE TABLE IF NOT EXISTS feeds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    params TEXT NOT NULL DEFAULT '{}',
+    interval_s INTEGER NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    cursor TEXT,
+    last_poll REAL,
+    last_item_ts REAL,
+    printed INTEGER NOT NULL DEFAULT 0,
+    error TEXT,
+    created REAL NOT NULL
+);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 """
 
@@ -118,6 +131,38 @@ class Store:
 
     def delete_schedule(self, sid: int) -> bool:
         return self._exec("DELETE FROM schedules WHERE id=?", (sid,)).rowcount > 0
+
+    # --- feeds -------------------------------------------------------------
+    @staticmethod
+    def _feed(r: Dict[str, Any]) -> Dict[str, Any]:
+        r["enabled"] = bool(r["enabled"])
+        r["params"] = json.loads(r["params"] or "{}")
+        r["cursor"] = json.loads(r["cursor"]) if r["cursor"] is not None else None
+        return r
+
+    def feeds(self) -> List[Dict[str, Any]]:
+        return [self._feed(r) for r in self._all("SELECT * FROM feeds ORDER BY id")]
+
+    def feed(self, fid: int) -> Optional[Dict[str, Any]]:
+        rows = self._all("SELECT * FROM feeds WHERE id=?", (fid,))
+        return self._feed(rows[0]) if rows else None
+
+    def add_feed(self, kind: str, params: dict, interval_s: int, enabled: bool = False) -> Dict[str, Any]:
+        cur = self._exec("INSERT INTO feeds (kind, params, interval_s, enabled, created) VALUES (?,?,?,?,?)",
+                         (kind, json.dumps(params), interval_s, int(enabled), time.time()))
+        return self.feed(cur.lastrowid)
+
+    def update_feed(self, fid: int, **fields) -> None:
+        for k in ("enabled",):
+            if k in fields:
+                fields[k] = int(fields[k])
+        if "cursor" in fields:
+            fields["cursor"] = json.dumps(fields["cursor"])
+        cols = ", ".join("%s=?" % k for k in fields)
+        self._exec("UPDATE feeds SET %s WHERE id=?" % cols, tuple(fields.values()) + (fid,))
+
+    def delete_feed(self, fid: int) -> bool:
+        return self._exec("DELETE FROM feeds WHERE id=?", (fid,)).rowcount > 0
 
     # --- settings ----------------------------------------------------------
     def stored_settings(self) -> Dict[str, Any]:

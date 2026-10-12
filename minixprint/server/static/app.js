@@ -199,6 +199,79 @@
       .catch(function (e) { toast(e.message, true); });
   };
 
+  // ---- live feeds ---------------------------------------------------------
+  var feedKinds = {};
+  function feedKind() { return feedKinds[$('f-kind').value]; }
+  function renderFeedParams() {
+    var k = feedKind(), box = $('f-params'); box.innerHTML = '';
+    if (!k) return;
+    $('f-int').value = k.default_interval_s;
+    Object.keys(k.params).forEach(function (name) {
+      var spec = k.params[name], lab = el('label', (spec.label || name) + ' '), inp;
+      if (spec.type === 'enum') {
+        inp = document.createElement('select');
+        spec.options.forEach(function (o) { var op = el('option', o); op.value = o; inp.appendChild(op); });
+        inp.value = spec.default || spec.options[0];
+      } else {
+        inp = document.createElement('input');
+        inp.type = spec.type === 'int' ? 'number' : 'text';
+        var d = spec.default;
+        inp.value = d == null ? '' : Array.isArray(d) ? d.join(', ') : d;
+        if (spec.type === 'icao') { inp.maxLength = 4; inp.placeholder = 'VOMM'; }
+        if (spec.required) inp.required = true;
+      }
+      inp.dataset.param = name; inp.dataset.type = spec.type;
+      lab.appendChild(inp); box.appendChild(lab);
+    });
+  }
+  function feedParams() {
+    var p = {};
+    document.querySelectorAll('#f-params [data-param]').forEach(function (i) {
+      var v = i.value.trim();
+      if (v === '') return;
+      p[i.dataset.param] = i.dataset.type === 'int' ? +v : i.dataset.type === 'list' ? v.split(/[\s,]+/).filter(Boolean) : v;
+    });
+    return p;
+  }
+  function loadFeeds() {
+    api('api/feeds').then(function (r) { return r.json(); }).then(function (list) {
+      var ul = $('feeds'); ul.innerHTML = '';
+      if (!list.length) { ul.appendChild(el('li', 'No live feeds yet.')); return; }
+      list.forEach(function (f) {
+        var li = el('li'), t = el('div', null, 't');
+        var what = f.kind + (f.params.station ? ' ' + f.params.station : '');
+        t.appendChild(document.createTextNode(what + ' · every ' + f.interval_s + 's'));
+        var last = f.last_item_ts ? 'last item ' + new Date(f.last_item_ts * 1000).toLocaleString() : 'no items yet';
+        t.appendChild(el('small', last + ' · printed ' + f.printed));
+        if (f.error) t.appendChild(el('small', f.error, 'bad'));
+        var tog = el('button', f.enabled ? 'Stop' : 'Start');
+        tog.onclick = function () {
+          api('api/feeds/' + f.id + (f.enabled ? '/stop' : '/start'), { method: 'POST' }).then(loadFeeds)
+            .catch(function (e) { toast(e.message, true); });
+        };
+        var del = el('button', 'Delete');
+        del.onclick = function () { api('api/feeds/' + f.id, { method: 'DELETE' }).then(loadFeeds).catch(function (e) { toast(e.message, true); }); };
+        li.appendChild(el('span', f.enabled ? '●' : '○')); li.appendChild(t); li.appendChild(tog); li.appendChild(del); ul.appendChild(li);
+      });
+    }).catch(function () {});
+  }
+  function loadFeedKinds() {
+    api('api/feeds/kinds').then(function (r) { return r.json(); }).then(function (list) {
+      list.forEach(function (k) {
+        feedKinds[k.kind] = k;
+        var o = el('option', k.kind); o.value = k.kind; o.title = k.description; $('f-kind').appendChild(o);
+      });
+      renderFeedParams();
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  $('f-kind').onchange = renderFeedParams;
+  $('feed-form').onsubmit = function (ev) {
+    ev.preventDefault();
+    api('api/feeds', jsonReq('POST', { kind: $('f-kind').value, params: feedParams(), interval_s: +$('f-int').value || null, enabled: true }))
+      .then(function () { loadFeeds(); toast('Feed started'); })
+      .catch(function (e) { toast(e.message, true); });
+  };
+
   // ---- history ----------------------------------------------------------
   function refreshHistory() {
     api('api/history?limit=30').then(function (r) { return r.json(); }).then(function (list) {
@@ -236,7 +309,8 @@
     })).then(function () { toast('Settings saved'); }).catch(function (e) { toast(e.message, true); });
   };
 
-  refreshStatus(); refreshHistory(); loadJobs(); loadSchedules(); loadSettings();
+  refreshStatus(); refreshHistory(); loadJobs(); loadSchedules(); loadSettings(); loadFeedKinds(); loadFeeds();
   setInterval(refreshStatus, 5000);
   setInterval(refreshHistory, 15000);
+  setInterval(loadFeeds, 10000);
 })();

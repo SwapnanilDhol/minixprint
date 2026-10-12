@@ -103,6 +103,23 @@ curl -X DELETE $H/api/schedules/1
 A 30-second ticker runs due schedules (`last_run` persisted). A daily/weekly slot missed by more
 than 10 minutes (server was down) is skipped rather than printed late; `every` schedules catch up once.
 
+## Feeds
+
+Long-running watchers that poll a source and print each new item (docs/FEEDS.md).
+
+```bash
+curl $H/api/feeds/kinds          # [{kind, description, params: {name: {type, required, default}}, default_interval_s}]
+curl -X POST $H/api/feeds -H 'content-type: application/json' \
+  -d '{"kind":"metar","params":{"station":"VOMM"},"enabled":true}'   # interval_s optional, enabled defaults false
+curl $H/api/feeds                # id, kind, params, interval_s, enabled, last_poll, last_item_ts, printed, error
+curl -X POST $H/api/feeds/1/start    # also /stop
+curl -X POST $H/api/feeds/1/poll     # poll now, returns the updated feed
+curl $H/api/feeds/1/preview -o p.png # latest item rendered, nothing printed, cursor untouched
+curl -X DELETE $H/api/feeds/1
+```
+Bad kind/params/interval (< 5 s) → 422; unknown id → 404; preview: 404 if there is nothing yet,
+502 if the source is unreachable. Printed jobs appear in history as kind `feed:<kind>`, user `feed`.
+
 ## Settings
 
 ```bash

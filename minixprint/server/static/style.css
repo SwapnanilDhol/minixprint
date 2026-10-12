@@ -61,6 +61,7 @@ button:disabled{opacity:.5}
 .list li{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
 .list li .t{flex:1;min-width:0}
 .list li .t small{display:block;color:var(--mute)}
+.list li .t small.bad{color:var(--bad)}
 .list li button{border:1px solid var(--line);background:transparent;color:var(--bad);border-radius:8px;padding:4px 9px}
 .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
 .thumb{flex:0 0 auto;width:84px;scroll-snap-align:start;text-decoration:none;color:var(--ink);font-size:11px}

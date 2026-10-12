@@ -94,6 +94,22 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--once", action="store_true", help="print what is there and exit")
     p.add_argument("--interval", type=float, default=2.0, help="poll seconds (default 2)")
 
+    p = sub.add_parser("feeds", help="manage live feeds on a running server (docs/FEEDS.md)")
+    p.add_argument("--server", default="http://127.0.0.1:8090", help="print server URL")
+    fs = p.add_subparsers(dest="action", metavar="ACTION")
+    fs.add_parser("list", help="list feeds (default)")
+    fs.add_parser("kinds", help="list feed kinds and their params")
+    q = fs.add_parser("add", help="add a feed and start it: add metar VOMM | add acars [key=value ...]")
+    q.add_argument("kind")
+    q.add_argument("args", nargs="*", help="first positional is the required param (e.g. the station), "
+                   "or key=value pairs; list values are comma separated")
+    q.add_argument("--interval", type=int, help="poll seconds (default per kind)")
+    q.add_argument("--paused", action="store_true", help="create stopped")
+    for name in ("start", "stop", "poll", "rm"):
+        q = fs.add_parser(name, help={"start": "start a feed", "stop": "stop a feed",
+                                      "poll": "poll now", "rm": "delete a feed"}[name])
+        q.add_argument("id", type=int)
+
     printers = []
     p = sub.add_parser("text", help='print text ("-" reads stdin)')
     p.add_argument("text")
@@ -123,6 +139,76 @@ def parser() -> argparse.ArgumentParser:
     return ap
 
 
+def _feed_params(kind: dict, args: list) -> dict:
+    """['VOMM'] -> {'station': 'VOMM'} (first required param); 'k=v' pairs are explicit."""
+    params = {}
+    required = [n for n, sp in kind["params"].items() if sp.get("required")]
+    for arg in args:
+        if "=" in arg:
+            k, v = arg.split("=", 1)
+            params[k] = v
+        elif required:
+            params[required.pop(0)] = arg
+        else:
+            raise ValueError("unexpected argument %r (use key=value)" % arg)
+    return params
+
+
+def _feeds(a) -> int:
+    import requests
+    base = a.server.rstrip("/")
+
+    def call(method, path, **kw):
+        try:
+            r = requests.request(method, base + path, timeout=60, **kw)
+        except requests.RequestException as e:
+            raise ValueError("cannot reach %s: %s" % (base, e))
+        if r.status_code >= 400:
+            try:
+                detail = r.json().get("detail", r.text)
+            except ValueError:
+                detail = r.text
+            raise ValueError(str(detail))
+        return r.json() if r.content else None
+
+    def show(f):
+        what = f["kind"] + (" " + f["params"]["station"] if "station" in f["params"] else "")
+        print("%-3s %-2s %-14s every %4ss  printed %-4s %s" % (
+            f["id"], "on" if f["enabled"] else "--", what, f["interval_s"], f["printed"],
+            ("ERROR: " + f["error"]) if f["error"] else ""))
+
+    try:
+        act = a.action or "list"
+        if act == "list":
+            rows = call("GET", "/api/feeds")
+            if not rows:
+                print("no feeds")
+            for f in rows:
+                show(f)
+        elif act == "kinds":
+            for k in call("GET", "/api/feeds/kinds"):
+                print("%-8s every %ss  %s" % (k["kind"], k["default_interval_s"], k["description"]))
+                for n, sp in k["params"].items():
+                    print("    %s (%s)%s" % (n, sp["type"], " required" if sp.get("required") else
+                                             " default %s" % sp.get("default")))
+        elif act == "add":
+            kinds = {k["kind"]: k for k in call("GET", "/api/feeds/kinds")}
+            if a.kind not in kinds:
+                raise ValueError("unknown kind %r; available: %s" % (a.kind, ", ".join(sorted(kinds))))
+            body = {"kind": a.kind, "params": _feed_params(kinds[a.kind], a.args), "enabled": not a.paused}
+            if a.interval:
+                body["interval_s"] = a.interval
+            show(call("POST", "/api/feeds", json=body))
+        elif act in ("start", "stop", "poll"):
+            show(call("POST", "/api/feeds/%d/%s" % (a.id, act)))
+        elif act == "rm":
+            call("DELETE", "/api/feeds/%d" % a.id)
+    except ValueError as e:
+        print("minixprint: %s" % e, file=sys.stderr)
+        return 1
+    return 0
+
+
 def main(argv: Optional[list] = None) -> int:
     a = parser().parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if a.verbose else logging.WARNING,
@@ -134,6 +220,8 @@ def main(argv: Optional[list] = None) -> int:
         logging.getLogger().setLevel(logging.INFO)
         uvicorn.run(create_app(fake=a.fake, root_path=a.root_path), host=a.host, port=a.port)
         return 0
+    if a.cmd == "feeds":
+        return _feeds(a)
     if a.cmd == "watch":
         from .watch import Watcher
         logging.getLogger().setLevel(logging.INFO)
